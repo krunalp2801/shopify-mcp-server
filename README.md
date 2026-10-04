@@ -121,7 +121,12 @@ npm run typecheck
 npm run build
 ```
 
-Tests run on Node's type stripping, so the source avoids TypeScript syntax that needs a real transform — notably parameter properties.
+Tests run straight from the TypeScript sources via Node's type stripping, so
+**development needs Node 22.6+**, and the source avoids TypeScript syntax that
+needs a real transform — notably parameter properties.
+
+The published server is compiled JavaScript and runs on **Node 20+**. CI
+proves both separately: tests on 22 and 24, and a build-plus-smoke job on 20.
 
 MIT licensed.
 

@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ["20.x", "22.x", "24.x"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: node --experimental-strip-types --test test/*.test.ts
+
+      - name: Build
+        run: npm run build
+
+      - name: Server starts and answers an MCP tools/list
+        run: |
+          node --input-type=module -e '
+            import { spawn } from "node:child_process";
+            const srv = spawn("node", ["dist/src/index.js"], { stdio: ["pipe", "pipe", "inherit"] });
+            let buf = ""; const seen = [];
+            srv.stdout.on("data", d => {
+              buf += d.toString();
+              let i;
+              while ((i = buf.indexOf("\n")) >= 0) {
+                const line = buf.slice(0, i).trim(); buf = buf.slice(i + 1);
+                if (line) { try { seen.push(JSON.parse(line)); } catch {} }
+              }
+            });
+            const send = o => srv.stdin.write(JSON.stringify(o) + "\n");
+            const wait = ms => new Promise(r => setTimeout(r, ms));
+            send({ jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: "2024-11-05", capabilities: {}, clientInfo: { name: "ci", version: "1" } } });
+            await wait(800);
+            send({ jsonrpc: "2.0", method: "notifications/initialized" });
+            await wait(200);
+            send({ jsonrpc: "2.0", id: 2, method: "tools/list" });
+            await wait(800);
+            srv.kill();
+            const tools = seen.find(m => m.id === 2)?.result?.tools ?? [];
+            console.log("tools:", tools.map(t => t.name).join(", "));
+            if (tools.length !== 5) { console.error("expected 5 tools, got " + tools.length); process.exit(1); }
+            if (!tools.every(t => t.annotations?.readOnlyHint === true)) { console.error("a tool is missing readOnlyHint"); process.exit(1); }
+          '

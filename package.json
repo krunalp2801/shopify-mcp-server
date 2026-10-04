@@ -1,0 +1,43 @@
+{
+  "name": "shopify-mcp-server",
+  "version": "0.1.0",
+  "description": "Read-only MCP server that lets Claude and other AI agents query a Shopify store's orders, products and inventory over the Admin GraphQL API.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Krunal Patel",
+  "bin": {
+    "shopify-mcp-server": "dist/src/index.js"
+  },
+  "main": "dist/src/index.js",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/src/index.js",
+    "dev": "node --experimental-strip-types src/index.ts",
+    "test": "tsc --noEmit && node --experimental-strip-types --test test/*.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "shopify",
+    "graphql",
+    "ai-agents",
+    "claude"
+  ],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "typescript": "^7.0.2"
+  }
+}
